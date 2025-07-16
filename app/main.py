@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from paramiko import SSHClient
+import socket
 
 client = SSHClient()
 client.load_system_host_keys()
@@ -18,11 +19,15 @@ async def hello():
 
 @app.get("/connect")
 async def connect(host: str, username: str):
-    client.connect(hostname=host, username=username, port=22)
-    stdin, stdout, stderr = client.exec_command("whoami")
+    try:
+        client.connect(hostname=host, username=username, port=22)
+        stdin, stdout, stderr = client.exec_command("whoami")
 
-    data = stdout.read() + stderr.read()
-    return {"response" : data}
+        data = stdout.read() + stderr.read()
+        return {"response" : data}
+    except socket.error:
+        return {"error" : "Error while try to connect server! Please check hostname!"}
+
 
 if __name__ == "__main__":
     app.run()
