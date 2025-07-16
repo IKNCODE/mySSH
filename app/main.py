@@ -1,15 +1,11 @@
 from fastapi import FastAPI
 from paramiko import SSHClient
 import socket
+from paramiko.ssh_exception import SSHException
 
 client = SSHClient()
 client.load_system_host_keys()
-client.connect("45.137.188.181", username="base_user", port=22)
 
-stdin, stdout, stderr = client.exec_command('ls -al')
-data = stdout.read() + stderr.read()
-
-client.close()
 
 app = FastAPI()
 
@@ -19,13 +15,20 @@ async def hello():
 
 @app.get("/connect")
 async def connect(host: str, username: str):
+    """
+    Функция для подключения к удаленному серверу через SSH 
+    params: 
+    hostname - адрес удаленного сервера
+    username - имя пользователя удаленного сервера
+    """
     try:
         client.connect(hostname=host, username=username, port=22)
         stdin, stdout, stderr = client.exec_command("whoami")
 
         data = stdout.read() + stderr.read()
+        client.close()
         return {"response" : data}
-    except socket.error:
+    except SSHException:
         return {"error" : "Error while try to connect server! Please check hostname!"}
 
 
